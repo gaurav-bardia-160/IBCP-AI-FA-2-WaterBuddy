@@ -19,7 +19,6 @@
 2. **One-Size-Fits-All Targets:** Many basic trackers use a generic `2000 ml` goal for everyone, ignoring physiological differences across age groups (kids, teens, adults, and seniors) or personal lifestyle targets.
 3. **Standard Unit Confusion:** Users rarely know the exact milliliter (`ml`) volume of every sip—they drink from their own specific cups, glasses, and bottles.
 4. **Disruptive Nighttime Alerts:** Traditional reminder apps send notifications at fixed hours even when the user is asleep.
-5. **Data Loss on Browser Refresh:** Standard web prototypes lose progress when the browser page is refreshed.
 
 **How WaterBuddy Solves This:**  
 WaterBuddy personalizes hydration from the very first screen—calibrating goals by age group, adapting to the user's actual cup and bottle sizes, scheduling smart reminders strictly during the user's **awake window**, and persisting all progress automatically so data is never lost on refresh.
