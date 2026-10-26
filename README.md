@@ -6,11 +6,11 @@
 ![Streamlit](https://img.shields.io/badge/Streamlit-Web_App-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Production_Ready-22C55E?style=for-the-badge)
 
-> **🌐 Live Web Application:** [**Click Here to Launch WaterBuddy on Streamlit Cloud 🚀**](https://ibcp-ai-fa-2-waterbuddy-6xcdcbzuh5jxrtrghaef2z.streamlit.app/)  
+> **🌐 Live Web Application:** [**Click Here to Launch WaterBuddy on Streamlit Cloud **](https://ibcp-ai-fa-2-waterbuddy-6xcdcbzuh5jxrtrghaef2z.streamlit.app/)  
 
 
 ## 📖 Project Overview
-**WaterBuddy** is an interactive, intelligent daily hydration companion developed in **100% Pure Python** using **Streamlit**. Designed under the context of **WellNest Technologies Pvt. Ltd.** (CRS Artificial Intelligence — Python Programming FA-2), WaterBuddy goes beyond static water counting by combining **age-aware hydration benchmarks**, **concentric progress rings**, **an interactive milestone mascot**, and a **sleep-aware custom reminder system with voice and push alerts**.
+**WaterBuddy** is an interactive, intelligent daily hydration companion developed in *Python** using **Streamlit**. WaterBuddy goes beyond static water counting by combining **age-based hydration benchmarks**, **progress rings**, **an interactive milestone mascot**, and a **sleep-aware custom reminder system with voice and push alerts**.
 
 ---
 
@@ -33,8 +33,6 @@ WaterBuddy personalizes hydration from the very first screen—calibrating goals
 | **🧒 Kids (6–12 yrs) & Teens (13–18 yrs)** | Primary End Users | Age-appropriate targets (`1600 ml` / `2200 ml`) and playful encouragement from **Shelly the Turtle** mascot at every milestone. |
 | **🧑‍💻 Working Adults (19–50 yrs)** | Primary End Users | Customizable targets (`2500 ml` standard), custom-interval voice/push reminders during work hours, and 1-click cup/bottle logging. |
 | **👵 Seniors (65+ yrs)** | Primary End Users | High-contrast dark UI, large readable metrics, gentle voice reminders, and safe hydration benchmarks (`2000 ml`). |
-| **🏥 WellNest Technologies Pvt. Ltd.** | Product Sponsor / Scenario | A lightweight, privacy-friendly, cloud-deployed wellness web application ready for public access. |
-| **🎓 Educators & Assessors (WACP / IBCP)** | Project Evaluators | Demonstrates modular Python architecture, real-time data processing, `st.session_state` persistence, and cloud deployment. |
 
 ---
 
@@ -91,18 +89,11 @@ Reacts live with age-aware motivational messages at exact completion milestones:
 
 ---
 
-## 🛠️ Technology Stack
-* **Language:** Python 3.12+ (100% Pure Python — Zero HTML/CSS/JS)
+## 🛠️ Technologies Used
+* **Language:** Python 3.12+
 * **Web Framework:** [Streamlit](https://streamlit.io/)
 * **Graphics Engine:** Pillow (`PIL.Image`, `PIL.ImageDraw`)
 * **Background Timer:** `streamlit-autorefresh`
 * **State Persistence:** `st.session_state` + Local `json` Storage
 
 ---
-
-## 🚀 How to Run Locally
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/Gaurav-Bardia-160/IBCP-AI-FA-2-WaterBuddy.git
-   cd IBCP-AI-FA-2-WaterBuddy
