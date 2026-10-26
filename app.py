@@ -1,5 +1,6 @@
 import os
 import sys
+import json
 import math
 import subprocess
 import threading
@@ -40,7 +41,7 @@ ensure_theme()
 # PAGE CONFIGURATION
 # ==========================================
 st.set_page_config(
-    page_title="Hydration Companion",
+    page_title="WaterBuddy: Hydration Companion",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -48,6 +49,8 @@ st.set_page_config(
 # ==========================================
 # DATA & CONSTANTS
 # ==========================================
+DATA_FILE = "waterbuddy_state.json"
+
 AGE_GOALS = {
     "Kids (6-12 years)": 1600,
     "Teens (13-18 years)": 2200,
@@ -66,24 +69,89 @@ HYDRATION_TIPS = [
 ]
 
 # ==========================================
+# PERSISTENT STORAGE (Prevents Reset on Refresh)
+# ==========================================
+def save_persistent_state():
+    """Saves all session state data to a local JSON file so browser refresh never loses data."""
+    data = {
+        "setup_complete": st.session_state.setup_complete,
+        "user_name": st.session_state.user_name,
+        "age_group": st.session_state.age_group,
+        "daily_goal": st.session_state.daily_goal,
+        "cup_capacity": st.session_state.cup_capacity,
+        "bottle_capacity": st.session_state.bottle_capacity,
+        "one_time_drink": st.session_state.one_time_drink,
+        "reminder_interval": st.session_state.reminder_interval,
+        "wake_time": st.session_state.wake_time.strftime("%H:%M"),
+        "sleep_time": st.session_state.sleep_time.strftime("%H:%M"),
+        "reminders_enabled": st.session_state.reminders_enabled,
+        "last_reminder_sent": st.session_state.last_reminder_sent.isoformat() if st.session_state.last_reminder_sent else None,
+        "intake": st.session_state.intake,
+        "history": st.session_state.history,
+        "current_tip": st.session_state.current_tip,
+        "celebrated": st.session_state.celebrated
+    }
+    try:
+        with open(DATA_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+    except Exception:
+        pass
+
+def load_persistent_state():
+    """Loads saved state from disk when the page is refreshed."""
+    if os.path.exists(DATA_FILE):
+        try:
+            with open(DATA_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            st.session_state.setup_complete = data.get("setup_complete", False)
+            st.session_state.user_name = data.get("user_name", "")
+            st.session_state.age_group = data.get("age_group", "Adults (19-50 years)")
+            st.session_state.daily_goal = int(data.get("daily_goal", AGE_GOALS[st.session_state.age_group]))
+            st.session_state.cup_capacity = int(data.get("cup_capacity", 250))
+            st.session_state.bottle_capacity = int(data.get("bottle_capacity", 500))
+            st.session_state.one_time_drink = int(data.get("one_time_drink", 250))
+            st.session_state.reminder_interval = int(data.get("reminder_interval", 30))
+            
+            w_str = data.get("wake_time", "08:45")
+            s_str = data.get("sleep_time", "23:00")
+            st.session_state.wake_time = datetime.strptime(w_str, "%H:%M").time()
+            st.session_state.sleep_time = datetime.strptime(s_str, "%H:%M").time()
+            
+            st.session_state.reminders_enabled = data.get("reminders_enabled", True)
+            last_rem = data.get("last_reminder_sent")
+            st.session_state.last_reminder_sent = datetime.fromisoformat(last_rem) if last_rem else None
+            st.session_state.intake = int(data.get("intake", 0))
+            st.session_state.history = data.get("history", [])
+            st.session_state.current_tip = data.get("current_tip", random.choice(HYDRATION_TIPS))
+            st.session_state.celebrated = data.get("celebrated", False)
+            return True
+        except Exception:
+            return False
+    return False
+
+# ==========================================
 # SESSION STATE INITIALIZATION
 # ==========================================
-if "setup_complete" not in st.session_state: st.session_state.setup_complete = False
-if "user_name" not in st.session_state: st.session_state.user_name = ""
-if "age_group" not in st.session_state: st.session_state.age_group = "Adults (19-50 years)"
-if "daily_goal" not in st.session_state: st.session_state.daily_goal = AGE_GOALS[st.session_state.age_group]
-if "cup_capacity" not in st.session_state: st.session_state.cup_capacity = 250
-if "bottle_capacity" not in st.session_state: st.session_state.bottle_capacity = 500
-if "one_time_drink" not in st.session_state: st.session_state.one_time_drink = 250
-if "reminder_interval" not in st.session_state: st.session_state.reminder_interval = 30
-if "wake_time" not in st.session_state: st.session_state.wake_time = time(8, 45)
-if "sleep_time" not in st.session_state: st.session_state.sleep_time = time(23, 0)
-if "reminders_enabled" not in st.session_state: st.session_state.reminders_enabled = True
-if "last_reminder_sent" not in st.session_state: st.session_state.last_reminder_sent = None
-if "intake" not in st.session_state: st.session_state.intake = 0
-if "history" not in st.session_state: st.session_state.history = []
-if "current_tip" not in st.session_state: st.session_state.current_tip = random.choice(HYDRATION_TIPS)
-if "celebrated" not in st.session_state: st.session_state.celebrated = False
+if "state_loaded" not in st.session_state:
+    loaded = load_persistent_state()
+    if not loaded:
+        st.session_state.setup_complete = False
+        st.session_state.user_name = ""
+        st.session_state.age_group = "Adults (19-50 years)"
+        st.session_state.daily_goal = AGE_GOALS[st.session_state.age_group]
+        st.session_state.cup_capacity = 250
+        st.session_state.bottle_capacity = 500
+        st.session_state.one_time_drink = 250
+        st.session_state.reminder_interval = 30
+        st.session_state.wake_time = time(8, 45)
+        st.session_state.sleep_time = time(23, 0)
+        st.session_state.reminders_enabled = True
+        st.session_state.last_reminder_sent = None
+        st.session_state.intake = 0
+        st.session_state.history = []
+        st.session_state.current_tip = random.choice(HYDRATION_TIPS)
+        st.session_state.celebrated = False
+    st.session_state.state_loaded = True
 
 # ==========================================
 # PURE PYTHON CUSTOM WIDGETS & LOGIC
@@ -156,6 +224,7 @@ def log_water(amount, label="Drink"):
             if not st.session_state.celebrated:
                 st.balloons()
                 st.session_state.celebrated = True
+        save_persistent_state()
 
 def reset_tracker():
     st.session_state.intake = 0
@@ -163,6 +232,7 @@ def reset_tracker():
     st.session_state.celebrated = False
     st.session_state.last_reminder_sent = None
     st.session_state.current_tip = random.choice(HYDRATION_TIPS)
+    save_persistent_state()
 
 def get_interactive_mascot(percentage, age_group, name):
     is_kid = "Kids" in age_group
@@ -205,8 +275,8 @@ if not st.session_state.setup_complete:
     _, center_col, _ = st.columns([0.5, 2.4, 0.5])
     with center_col:
         with st.container(border=True):
-            st.header(":blue[Welcome to Hydration Tracker!]")
-            st.caption("Set up your profile, drinkware capacities, and schedule to begin.")
+            st.header(":blue[Welcome to WaterBuddy!]")
+            st.caption("Set up your profile, drinkware capacities, and custom reminder schedule to begin.")
             
             name_input = st.text_input("What is your name?", value=st.session_state.user_name, placeholder="Enter your name (Required)")
             selected_age = st.selectbox("Select Your Age Group:", options=list(AGE_GOALS.keys()), index=list(AGE_GOALS.keys()).index(st.session_state.age_group))
@@ -225,12 +295,13 @@ if not st.session_state.setup_complete:
             with d_col2: bottle_input = st.number_input("1 Bottle Capacity (ml):", min_value=100, max_value=3000, value=st.session_state.bottle_capacity, step=50)
             with d_col3: one_time_input = st.number_input("Drink at One Time (ml):", min_value=50, max_value=1000, value=st.session_state.one_time_drink, step=25)
 
-            st.subheader(":orange[Your Sleep, Wake & Reminder Schedule]")
+            st.subheader(":orange[Your Sleep, Wake & Custom Reminder Schedule]")
             s_col1, s_col2, s_col3 = st.columns(3)
             with s_col1: wake_input = ampm_time_picker("Wake-Up Time:", st.session_state.wake_time, "sw")
             with s_col2: sleep_input = ampm_time_picker("Sleep Time:", st.session_state.sleep_time, "ss")
-            with s_col3: 
-                interval_input = st.number_input("Remind me every (mins):", min_value=1, max_value=360, value=st.session_state.reminder_interval, step=5)
+            with s_col3:
+                st.caption("**Custom Reminder Interval**")
+                interval_input = st.number_input("Remind after (mins):", min_value=1, max_value=360, value=int(st.session_state.reminder_interval), step=1, label_visibility="collapsed")
             
             st.write("")
             if st.button("Proceed to Dashboard", type="primary", use_container_width=True):
@@ -238,14 +309,15 @@ if not st.session_state.setup_complete:
                 else:
                     st.session_state.user_name = name_input.strip()
                     st.session_state.age_group = selected_age
-                    st.session_state.daily_goal = goal_input
-                    st.session_state.cup_capacity = cup_input
-                    st.session_state.bottle_capacity = bottle_input
-                    st.session_state.one_time_drink = one_time_input
-                    st.session_state.reminder_interval = interval_input
+                    st.session_state.daily_goal = int(goal_input)
+                    st.session_state.cup_capacity = int(cup_input)
+                    st.session_state.bottle_capacity = int(bottle_input)
+                    st.session_state.one_time_drink = int(one_time_input)
+                    st.session_state.reminder_interval = int(interval_input)
                     st.session_state.wake_time = wake_input
                     st.session_state.sleep_time = sleep_input
                     st.session_state.setup_complete = True
+                    save_persistent_state()
                     st.rerun()
 
 # ==========================================
@@ -261,7 +333,7 @@ else:
     cup_cap = st.session_state.cup_capacity
     bottle_cap = st.session_state.bottle_capacity
     one_time_ml = st.session_state.one_time_drink
-    interval_mins = st.session_state.reminder_interval
+    interval_mins = int(st.session_state.reminder_interval)
     
     remaining = max(0, goal - total_intake)
     percentage = round((total_intake / goal) * 100, 1) if goal > 0 else 0.0
@@ -270,11 +342,11 @@ else:
     # --- TOP BAR ---
     top_left, top_right = st.columns([3.2, 1], vertical_alignment="center")
     with top_left:
-        st.header(f":blue[{st.session_state.user_name}'s] Hydration Dashboard")
+        st.header(f":blue[{st.session_state.user_name}'s] WaterBuddy")
         st.markdown(
             f":blue-background[**{st.session_state.age_group}**] | "
             f":violet-background[**Cup: {cup_cap} ml**] | "
-            f":orange-background[**Reminders: {interval_mins}m**] | "
+            f":orange-background[**Remind Every: {interval_mins} mins**] | "
             f":green-background[**Wake: {st.session_state.wake_time.strftime('%I:%M %p')} - Sleep: {st.session_state.sleep_time.strftime('%I:%M %p')}**]"
         )
     with top_right:
@@ -285,12 +357,13 @@ else:
             if new_age != st.session_state.age_group:
                 st.session_state.age_group = new_age
                 st.session_state.daily_goal = AGE_GOALS[new_age]
+                save_persistent_state()
                 st.rerun()
-            new_goal = st.number_input("Personal Daily Target (ml):", min_value=500, max_value=6000, value=st.session_state.daily_goal, step=100)
-            new_cup = st.number_input("1 Cup Capacity (ml):", min_value=50, max_value=1000, value=st.session_state.cup_capacity, step=25)
-            new_bottle = st.number_input("1 Bottle Capacity (ml):", min_value=100, max_value=3000, value=st.session_state.bottle_capacity, step=50)
-            new_one_time = st.number_input("Drink at One Time (ml):", min_value=50, max_value=1000, value=st.session_state.one_time_drink, step=25)
-            new_interval = st.number_input("Remind me every (mins):", min_value=1, max_value=360, value=st.session_state.reminder_interval, step=5)
+            new_goal = st.number_input("Personal Daily Target (ml):", min_value=500, max_value=6000, value=int(st.session_state.daily_goal), step=100)
+            new_cup = st.number_input("1 Cup Capacity (ml):", min_value=50, max_value=1000, value=int(st.session_state.cup_capacity), step=25)
+            new_bottle = st.number_input("1 Bottle Capacity (ml):", min_value=100, max_value=3000, value=int(st.session_state.bottle_capacity), step=50)
+            new_one_time = st.number_input("Drink at One Time (ml):", min_value=50, max_value=1000, value=int(st.session_state.one_time_drink), step=25)
+            new_interval = st.number_input("Remind me every (mins):", min_value=1, max_value=360, value=int(st.session_state.reminder_interval), step=1)
             new_wake = ampm_time_picker("Wake-Up Time:", st.session_state.wake_time, "pw")
             new_sleep = ampm_time_picker("Sleep Time:", st.session_state.sleep_time, "ps")
             
@@ -298,17 +371,19 @@ else:
                 if not new_name.strip(): st.error("Name cannot be empty.")
                 else:
                     st.session_state.user_name = new_name.strip()
-                    st.session_state.daily_goal = new_goal
-                    st.session_state.cup_capacity = new_cup
-                    st.session_state.bottle_capacity = new_bottle
-                    st.session_state.one_time_drink = new_one_time
-                    st.session_state.reminder_interval = new_interval
+                    st.session_state.daily_goal = int(new_goal)
+                    st.session_state.cup_capacity = int(new_cup)
+                    st.session_state.bottle_capacity = int(new_bottle)
+                    st.session_state.one_time_drink = int(new_one_time)
+                    st.session_state.reminder_interval = int(new_interval)
                     st.session_state.wake_time = new_wake
                     st.session_state.sleep_time = new_sleep
+                    save_persistent_state()
                     st.toast("Profile settings updated!")
                     st.rerun()
             if st.button("Back to Setup Screen", use_container_width=True):
                 st.session_state.setup_complete = False
+                save_persistent_state()
                 st.rerun()
     st.divider()
 
@@ -343,6 +418,7 @@ else:
             with t_col2:
                 if st.button("New Tip", use_container_width=True):
                     st.session_state.current_tip = random.choice(HYDRATION_TIPS)
+                    save_persistent_state()
                     st.rerun()
             st.warning(st.session_state.current_tip)
 
@@ -370,10 +446,29 @@ else:
 
         with st.container(border=True):
             st.subheader(":blue[Smart Reminders]")
-            st.session_state.reminders_enabled = st.toggle("Enable Automatic Reminders", value=st.session_state.reminders_enabled)
+            
+            rem_toggle = st.toggle("Enable Automatic Reminders", value=st.session_state.reminders_enabled)
+            if rem_toggle != st.session_state.reminders_enabled:
+                st.session_state.reminders_enabled = rem_toggle
+                save_persistent_state()
+
+            # Direct Custom Reminder Time Selector on the Main Dashboard
+            new_dash_interval = st.number_input(
+                "Remind me after every (minutes):",
+                min_value=1,
+                max_value=360,
+                value=interval_mins,
+                step=1
+            )
+            if new_dash_interval != interval_mins:
+                st.session_state.reminder_interval = int(new_dash_interval)
+                interval_mins = int(new_dash_interval)
+                save_persistent_state()
+                st.rerun()
 
             if is_awake:
-                if now < first_reminder: next_reminder = first_reminder
+                if now < first_reminder:
+                    next_reminder = first_reminder
                 else:
                     delta_mins = (now - first_reminder).total_seconds() / 60.0
                     intervals_passed = int(delta_mins // interval_mins)
@@ -384,8 +479,13 @@ else:
                         if st.session_state.last_reminder_sent is None or latest_passed > st.session_state.last_reminder_sent:
                             trigger_voice_and_push_reminder(st.session_state.user_name, one_time_ml, remaining, goal)
                             st.session_state.last_reminder_sent = latest_passed
+                            save_persistent_state()
 
-                st.success(f"**Status: Awake Window Active**\n\nNext reminder scheduled for: **{next_reminder.strftime('%I:%M %p')}**")
+                st.success(
+                    f"**Status: Awake Window Active**\n\n"
+                    f"First reminder: **{first_reminder.strftime('%I:%M %p')}** | Interval: **Every {interval_mins} min(s)**\n\n"
+                    f"Next reminder at: **{next_reminder.strftime('%I:%M %p')}**"
+                )
             else:
                 st.warning(f"**Status: Sleep Hours Active**\n\nReminders paused until {st.session_state.wake_time.strftime('%I:%M %p')}.")
 
