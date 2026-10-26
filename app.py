@@ -1,10 +1,8 @@
 import os
 import sys
 import math
-import io
 import subprocess
 import threading
-import base64
 import streamlit as st
 import random
 from datetime import datetime, time, timedelta
@@ -13,12 +11,6 @@ from PIL import Image, ImageDraw
 # ==========================================
 # AUTO-INSTALL EXTERNAL LIBRARIES
 # ==========================================
-try:
-    from gtts import gTTS
-except ImportError:
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "gtts"])
-    from gtts import gTTS
-
 try:
     from streamlit_autorefresh import st_autorefresh
 except ImportError:
@@ -76,44 +68,27 @@ HYDRATION_TIPS = [
 # ==========================================
 # SESSION STATE INITIALIZATION
 # ==========================================
-if "setup_complete" not in st.session_state:
-    st.session_state.setup_complete = False
-if "user_name" not in st.session_state:
-    st.session_state.user_name = ""
-if "age_group" not in st.session_state:
-    st.session_state.age_group = "Adults (19-50 years)"
-if "daily_goal" not in st.session_state:
-    st.session_state.daily_goal = AGE_GOALS[st.session_state.age_group]
-if "cup_capacity" not in st.session_state:
-    st.session_state.cup_capacity = 250
-if "bottle_capacity" not in st.session_state:
-    st.session_state.bottle_capacity = 500
-if "one_time_drink" not in st.session_state:
-    st.session_state.one_time_drink = 250
-if "wake_time" not in st.session_state:
-    st.session_state.wake_time = time(8, 45)
-if "sleep_time" not in st.session_state:
-    st.session_state.sleep_time = time(23, 0)
-if "reminders_enabled" not in st.session_state:
-    st.session_state.reminders_enabled = True
-if "last_reminder_sent" not in st.session_state:
-    st.session_state.last_reminder_sent = None
-if "intake" not in st.session_state:
-    st.session_state.intake = 0
-if "history" not in st.session_state:
-    st.session_state.history = []
-if "current_tip" not in st.session_state:
-    st.session_state.current_tip = random.choice(HYDRATION_TIPS)
-if "celebrated" not in st.session_state:
-    st.session_state.celebrated = False
-if "voice_audio" not in st.session_state:
-    st.session_state.voice_audio = None
+if "setup_complete" not in st.session_state: st.session_state.setup_complete = False
+if "user_name" not in st.session_state: st.session_state.user_name = ""
+if "age_group" not in st.session_state: st.session_state.age_group = "Adults (19-50 years)"
+if "daily_goal" not in st.session_state: st.session_state.daily_goal = AGE_GOALS[st.session_state.age_group]
+if "cup_capacity" not in st.session_state: st.session_state.cup_capacity = 250
+if "bottle_capacity" not in st.session_state: st.session_state.bottle_capacity = 500
+if "one_time_drink" not in st.session_state: st.session_state.one_time_drink = 250
+if "reminder_interval" not in st.session_state: st.session_state.reminder_interval = 30
+if "wake_time" not in st.session_state: st.session_state.wake_time = time(8, 45)
+if "sleep_time" not in st.session_state: st.session_state.sleep_time = time(23, 0)
+if "reminders_enabled" not in st.session_state: st.session_state.reminders_enabled = True
+if "last_reminder_sent" not in st.session_state: st.session_state.last_reminder_sent = None
+if "intake" not in st.session_state: st.session_state.intake = 0
+if "history" not in st.session_state: st.session_state.history = []
+if "current_tip" not in st.session_state: st.session_state.current_tip = random.choice(HYDRATION_TIPS)
+if "celebrated" not in st.session_state: st.session_state.celebrated = False
 
 # ==========================================
 # PURE PYTHON CUSTOM WIDGETS & LOGIC
 # ==========================================
 def extract_ampm(t_obj):
-    """Converts a datetime.time object into Hour, Minute, AM/PM format."""
     h = t_obj.hour
     m = t_obj.minute
     a = "AM"
@@ -121,53 +96,30 @@ def extract_ampm(t_obj):
         a = "PM"
         if h > 12: h -= 12
     if h == 0: h = 12
-    m_str = f"{(m // 5) * 5:02d}" # Round to nearest 5
+    m_str = f"{(m // 5) * 5:02d}"
     return h, m_str, a
 
 def ampm_time_picker(label, default_time, key_prefix):
-    """Pure Python AM/PM Time Selector using standard Streamlit columns."""
     st.caption(f"**{label}**")
     def_h, def_m, def_a = extract_ampm(default_time)
-    
     c1, c2, c3 = st.columns(3)
-    with c1:
-        h = st.selectbox("Hr", [1,2,3,4,5,6,7,8,9,10,11,12], index=[1,2,3,4,5,6,7,8,9,10,11,12].index(def_h), key=f"{key_prefix}_h", label_visibility="collapsed")
-    with c2:
-        mins = ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"]
-        m = st.selectbox("Min", mins, index=mins.index(def_m), key=f"{key_prefix}_m", label_visibility="collapsed")
-    with c3:
-        a = st.selectbox("AM/PM", ["AM", "PM"], index=["AM", "PM"].index(def_a), key=f"{key_prefix}_a", label_visibility="collapsed")
-        
+    with c1: h = st.selectbox("Hr", [1,2,3,4,5,6,7,8,9,10,11,12], index=[1,2,3,4,5,6,7,8,9,10,11,12].index(def_h), key=f"{key_prefix}_h", label_visibility="collapsed")
+    with c2: m = st.selectbox("Min", ["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"], index=["00", "05", "10", "15", "20", "25", "30", "35", "40", "45", "50", "55"].index(def_m), key=f"{key_prefix}_m", label_visibility="collapsed")
+    with c3: a = st.selectbox("AM/PM", ["AM", "PM"], index=["AM", "PM"].index(def_a), key=f"{key_prefix}_a", label_visibility="collapsed")
     hr_24 = h
     if a == "AM" and h == 12: hr_24 = 0
     elif a == "PM" and h != 12: hr_24 += 12
     return time(hr_24, int(m))
 
-def play_hidden_audio(audio_bytes):
-    """Encodes audio to base64 to play invisibly without showing the ugly player slider."""
-    b64 = base64.b64encode(audio_bytes).decode()
-    st.markdown(f'<audio autoplay src="data:audio/mp3;base64,{b64}"></audio>', unsafe_allow_html=True)
-
-def log_water(amount, label="Drink"):
-    if amount > 0:
-        old_intake = st.session_state.intake
-        st.session_state.intake += amount
-        current_time = datetime.now().strftime("%I:%M %p")
-        st.session_state.history.insert(0, f"{current_time} — Added **{amount} ml** ({label})")
-        st.session_state.voice_audio = None
-        
-        if old_intake < st.session_state.daily_goal and st.session_state.intake >= st.session_state.daily_goal:
-            if not st.session_state.celebrated:
-                st.balloons()
-                st.session_state.celebrated = True
-
-def reset_tracker():
-    st.session_state.intake = 0
-    st.session_state.history = []
-    st.session_state.celebrated = False
-    st.session_state.voice_audio = None
-    st.session_state.last_reminder_sent = None
-    st.session_state.current_tip = random.choice(HYDRATION_TIPS)
+def speak_voice_python(text):
+    def _speak():
+        try:
+            safe_text = text.replace("'", "''")
+            ps_script = f"Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak('{safe_text}')"
+            subprocess.run(["powershell", "-Command", ps_script], capture_output=True)
+        except Exception:
+            pass
+    threading.Thread(target=_speak, daemon=True).start()
 
 def send_desktop_popup(title, message):
     def _popup():
@@ -185,43 +137,46 @@ def send_desktop_popup(title, message):
 
 def trigger_voice_and_push_reminder(name, one_time_ml, remaining_ml, goal_ml):
     if remaining_ml <= 0:
-        spoken_text = f"Hello {name}. Congratulations! You have already completed your daily hydration goal of {goal_ml} milliliters today."
+        spoken_text = f"Hello {name}. Congratulations! You have completed your hydration goal today."
         push_text = f"Goal Complete! You have already reached {goal_ml} ml today."
     else:
-        spoken_text = (
-            f"Hello {name}. It is time for your hydration break. "
-            f"Please drink {one_time_ml} milliliters of water now. "
-            f"You have {remaining_ml} milliliters remaining to complete your daily goal."
-        )
+        spoken_text = f"Hello {name}. It is time for your hydration break. Please drink {one_time_ml} milliliters of water now."
         push_text = f"Hydration Reminder: Drink {one_time_ml} ml of water now! ({remaining_ml} ml left)"
-
     st.toast(push_text)
     send_desktop_popup("Hydration Reminder", push_text)
+    speak_voice_python(spoken_text)
 
-    try:
-        tts = gTTS(text=spoken_text, lang="en")
-        audio_buffer = io.BytesIO()
-        tts.write_to_fp(audio_buffer)
-        audio_buffer.seek(0)
-        st.session_state.voice_audio = audio_buffer.read()
-    except Exception:
-        st.session_state.voice_audio = None
+def log_water(amount, label="Drink"):
+    if amount > 0:
+        old_intake = st.session_state.intake
+        st.session_state.intake += amount
+        current_time = datetime.now().strftime("%I:%M %p")
+        st.session_state.history.insert(0, f"{current_time} — Added **{amount} ml** ({label})")
+        if old_intake < st.session_state.daily_goal and st.session_state.intake >= st.session_state.daily_goal:
+            if not st.session_state.celebrated:
+                st.balloons()
+                st.session_state.celebrated = True
 
-def get_milestone_feedback(percentage, age_group, name):
+def reset_tracker():
+    st.session_state.intake = 0
+    st.session_state.history = []
+    st.session_state.celebrated = False
+    st.session_state.last_reminder_sent = None
+    st.session_state.current_tip = random.choice(HYDRATION_TIPS)
+
+def get_interactive_mascot(percentage, age_group, name):
     is_kid = "Kids" in age_group
-    if percentage == 0: return "Ready to Hydrate", f"Tap a drink button to start your day, {name}!" if is_kid else f"Log your first cup or bottle of water to start your day, {name}."
-    elif percentage < 25: return "Off to a Great Start", f"Great job starting your water goal, {name}!" if is_kid else f"Good start, {name}. Early hydration sets the tone for your day."
-    elif percentage < 50: return "25% Milestone Reached", "You are swimming right along! Keep sipping!" if is_kid else "Nice momentum. You have completed a quarter of your daily target."
-    elif percentage < 75: return "50% Milestone: Halfway There", f"Awesome job, {name}! You passed the halfway mark!" if is_kid else f"Great progress, {name}. You reached 50% of your daily goal."
-    elif percentage < 100: return "75% Milestone: Almost Done", "Just a little more water left to reach your goal!" if is_kid else "Fantastic effort. You are in the home stretch for today."
-    else: return "100% Goal Achieved", f"Congratulations {name}! You completed today's goal!" if is_kid else f"Congratulations, {name}. You achieved 100% of your daily hydration goal."
+    if percentage < 25: return "🐢💤", "Ready to Hydrate", f"Tap a drink button to wake Shelly up, {name}!" if is_kid else f"Log your first cup to start your day, {name}."
+    elif percentage < 50: return "🐢😊", "25% Milestone: Great Start!", f"Yay! Shelly is awake and smiling, {name}!" if is_kid else f"Good start, {name}. Keep the momentum going."
+    elif percentage < 75: return "🐢🌊", "50% Milestone: Halfway There!", "Splash! Shelly is swimming right along!" if is_kid else f"Awesome progress, {name}. You are 50% done."
+    elif percentage < 100: return "🐢🚀", "75% Milestone: Almost Done!", "Super Turtle speed! Just a little left!" if is_kid else "Fantastic effort. You are in the home stretch."
+    else: return "🐢👑🎉", "100% Goal Achieved!", f"WOOHOO! Shelly is doing a victory dance!" if is_kid else f"Congratulations, {name}. You conquered your goal!"
 
 def draw_hydration_rings(personal_pct, recommended_pct):
     size = 320
     center = size // 2
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-
     r_outer = 140
     width_outer = 28
     bbox_outer = [center - r_outer, center - r_outer, center + r_outer, center + r_outer]
@@ -229,7 +184,6 @@ def draw_hydration_rings(personal_pct, recommended_pct):
     if personal_pct > 0:
         angle_outer = min(personal_pct, 100) / 100.0 * 360.0
         draw.arc(bbox_outer, start=-90, end=-90 + angle_outer, fill=(34, 197, 94, 255), width=width_outer)
-
     r_inner = 98
     width_inner = 28
     bbox_inner = [center - r_inner, center - r_inner, center + r_inner, center + r_inner]
@@ -237,7 +191,6 @@ def draw_hydration_rings(personal_pct, recommended_pct):
     if recommended_pct > 0:
         angle_inner = min(recommended_pct, 100) / 100.0 * 360.0
         draw.arc(bbox_inner, start=-90, end=-90 + angle_inner, fill=(250, 204, 21, 255), width=width_inner)
-
     if personal_pct >= 100:
         tick_points = [(center - 28, center + 2), (center - 8, center + 24), (center + 32, center - 22)]
         draw.line(tick_points, fill=(255, 255, 255, 255), width=10, joint="curve")
@@ -250,7 +203,6 @@ def draw_hydration_rings(personal_pct, recommended_pct):
 if not st.session_state.setup_complete:
     st.write("")
     _, center_col, _ = st.columns([0.5, 2.4, 0.5])
-    
     with center_col:
         with st.container(border=True):
             st.header(":blue[Welcome to Hydration Tracker!]")
@@ -273,15 +225,16 @@ if not st.session_state.setup_complete:
             with d_col2: bottle_input = st.number_input("1 Bottle Capacity (ml):", min_value=100, max_value=3000, value=st.session_state.bottle_capacity, step=50)
             with d_col3: one_time_input = st.number_input("Drink at One Time (ml):", min_value=50, max_value=1000, value=st.session_state.one_time_drink, step=25)
 
-            st.subheader(":orange[Your Sleep & Wake Schedule]")
-            s_col1, s_col2 = st.columns(2)
+            st.subheader(":orange[Your Sleep, Wake & Reminder Schedule]")
+            s_col1, s_col2, s_col3 = st.columns(3)
             with s_col1: wake_input = ampm_time_picker("Wake-Up Time:", st.session_state.wake_time, "sw")
             with s_col2: sleep_input = ampm_time_picker("Sleep Time:", st.session_state.sleep_time, "ss")
+            with s_col3: 
+                interval_input = st.number_input("Remind me every (mins):", min_value=1, max_value=360, value=st.session_state.reminder_interval, step=5)
             
             st.write("")
             if st.button("Proceed to Dashboard", type="primary", use_container_width=True):
-                if not name_input.strip():
-                    st.error("Please enter your name before proceeding.")
+                if not name_input.strip(): st.error("Please enter your name before proceeding.")
                 else:
                     st.session_state.user_name = name_input.strip()
                     st.session_state.age_group = selected_age
@@ -289,6 +242,7 @@ if not st.session_state.setup_complete:
                     st.session_state.cup_capacity = cup_input
                     st.session_state.bottle_capacity = bottle_input
                     st.session_state.one_time_drink = one_time_input
+                    st.session_state.reminder_interval = interval_input
                     st.session_state.wake_time = wake_input
                     st.session_state.sleep_time = sleep_input
                     st.session_state.setup_complete = True
@@ -307,23 +261,22 @@ else:
     cup_cap = st.session_state.cup_capacity
     bottle_cap = st.session_state.bottle_capacity
     one_time_ml = st.session_state.one_time_drink
+    interval_mins = st.session_state.reminder_interval
     
     remaining = max(0, goal - total_intake)
     percentage = round((total_intake / goal) * 100, 1) if goal > 0 else 0.0
     std_pct = round((total_intake / standard_target) * 100, 1) if standard_target > 0 else 0.0
 
-    # --- TOP BAR: GREETING & PROFILE MENU ---
+    # --- TOP BAR ---
     top_left, top_right = st.columns([3.2, 1], vertical_alignment="center")
-    
     with top_left:
         st.header(f":blue[{st.session_state.user_name}'s] Hydration Dashboard")
         st.markdown(
-            f":blue-background[**{st.session_state.age_group}**] &nbsp; "
-            f":violet-background[**Cup: {cup_cap} ml**] &nbsp; "
-            f":orange-background[**Bottle: {bottle_cap} ml**] &nbsp; "
+            f":blue-background[**{st.session_state.age_group}**] | "
+            f":violet-background[**Cup: {cup_cap} ml**] | "
+            f":orange-background[**Reminders: {interval_mins}m**] | "
             f":green-background[**Wake: {st.session_state.wake_time.strftime('%I:%M %p')} - Sleep: {st.session_state.sleep_time.strftime('%I:%M %p')}**]"
         )
-        
     with top_right:
         with st.popover(f"Profile: {st.session_state.user_name}", use_container_width=True):
             st.subheader("Edit Your Profile")
@@ -333,32 +286,30 @@ else:
                 st.session_state.age_group = new_age
                 st.session_state.daily_goal = AGE_GOALS[new_age]
                 st.rerun()
-                
             new_goal = st.number_input("Personal Daily Target (ml):", min_value=500, max_value=6000, value=st.session_state.daily_goal, step=100)
             new_cup = st.number_input("1 Cup Capacity (ml):", min_value=50, max_value=1000, value=st.session_state.cup_capacity, step=25)
             new_bottle = st.number_input("1 Bottle Capacity (ml):", min_value=100, max_value=3000, value=st.session_state.bottle_capacity, step=50)
             new_one_time = st.number_input("Drink at One Time (ml):", min_value=50, max_value=1000, value=st.session_state.one_time_drink, step=25)
+            new_interval = st.number_input("Remind me every (mins):", min_value=1, max_value=360, value=st.session_state.reminder_interval, step=5)
             new_wake = ampm_time_picker("Wake-Up Time:", st.session_state.wake_time, "pw")
             new_sleep = ampm_time_picker("Sleep Time:", st.session_state.sleep_time, "ps")
             
             if st.button("Save Changes", type="primary", use_container_width=True):
-                if not new_name.strip():
-                    st.error("Name cannot be empty.")
+                if not new_name.strip(): st.error("Name cannot be empty.")
                 else:
                     st.session_state.user_name = new_name.strip()
                     st.session_state.daily_goal = new_goal
                     st.session_state.cup_capacity = new_cup
                     st.session_state.bottle_capacity = new_bottle
                     st.session_state.one_time_drink = new_one_time
+                    st.session_state.reminder_interval = new_interval
                     st.session_state.wake_time = new_wake
                     st.session_state.sleep_time = new_sleep
                     st.toast("Profile settings updated!")
                     st.rerun()
-                
             if st.button("Back to Setup Screen", use_container_width=True):
                 st.session_state.setup_complete = False
                 st.rerun()
-
     st.divider()
 
     # ==========================================
@@ -372,7 +323,6 @@ else:
             st.info(f"**Total Intake**\n### {total_intake} ml\n{round(total_intake / cup_cap, 1)} of your cups")
             rem_text = "Goal Reached!" if remaining == 0 else f"{round(remaining / cup_cap, 1)} cups left"
             st.warning(f"**Remaining Needed**\n### {remaining} ml\n{rem_text}")
-
         with m_c2:
             diff = goal - standard_target
             diff_text = "Matches age target" if diff == 0 else f"{diff:+d} ml vs age"
@@ -380,9 +330,11 @@ else:
             ach_text = "100%+ Complete" if percentage >= 100 else f"{round(100 - percentage, 1)}% remaining"
             st.error(f"**Goal Achieved**\n### {percentage}%\n{ach_text}")
 
-        headline, message = get_milestone_feedback(percentage, st.session_state.age_group, st.session_state.user_name)
+        mascot, headline, message = get_interactive_mascot(percentage, st.session_state.age_group, st.session_state.user_name)
         with st.container(border=True):
-            st.subheader(f":green[{headline}]")
+            mac_col1, mac_col2 = st.columns([1, 2.5], vertical_alignment="center")
+            with mac_col1: st.title(mascot)
+            with mac_col2: st.subheader(f":green[{headline}]")
             if percentage >= 100: st.success(message)
             else: st.info(message)
             st.divider()
@@ -405,12 +357,10 @@ else:
                 st.toast("Daily progress reset.")
                 st.rerun()
 
-        # Fixed 30-Minute Interval Logic
         now = datetime.now()
         today = now.date()
         wake_dt = datetime.combine(today, st.session_state.wake_time)
         sleep_dt = datetime.combine(today, st.session_state.sleep_time)
-
         if sleep_dt < wake_dt:
             if now.time() < wake_dt.time(): wake_dt -= timedelta(days=1)
             else: sleep_dt += timedelta(days=1)
@@ -419,29 +369,25 @@ else:
         is_awake = wake_dt <= now < sleep_dt
 
         with st.container(border=True):
-            st.subheader(":blue[Smart Voice & Push Reminder]")
-            st.session_state.reminders_enabled = st.toggle("Enable Smart Awake-Time Reminders", value=st.session_state.reminders_enabled)
+            st.subheader(":blue[Smart Reminders]")
+            st.session_state.reminders_enabled = st.toggle("Enable Automatic Reminders", value=st.session_state.reminders_enabled)
 
             if is_awake:
-                st.success(f"**Status: Awake Window Active**\n\nFirst reminder at: **{first_reminder.strftime('%I:%M %p')}**\nThen exactly every **30 mins**.")
+                if now < first_reminder: next_reminder = first_reminder
+                else:
+                    delta_mins = (now - first_reminder).total_seconds() / 60.0
+                    intervals_passed = int(delta_mins // interval_mins)
+                    next_reminder = first_reminder + timedelta(minutes=(intervals_passed + 1) * interval_mins)
+                    latest_passed = first_reminder + timedelta(minutes=intervals_passed * interval_mins)
+                    
+                    if st.session_state.reminders_enabled and remaining > 0:
+                        if st.session_state.last_reminder_sent is None or latest_passed > st.session_state.last_reminder_sent:
+                            trigger_voice_and_push_reminder(st.session_state.user_name, one_time_ml, remaining, goal)
+                            st.session_state.last_reminder_sent = latest_passed
+
+                st.success(f"**Status: Awake Window Active**\n\nNext reminder scheduled for: **{next_reminder.strftime('%I:%M %p')}**")
             else:
                 st.warning(f"**Status: Sleep Hours Active**\n\nReminders paused until {st.session_state.wake_time.strftime('%I:%M %p')}.")
-
-            latest_passed = None
-            if is_awake and now >= first_reminder:
-                delta_mins = (now - first_reminder).total_seconds() / 60.0
-                intervals_passed = int(delta_mins // 30)
-                latest_passed = first_reminder + timedelta(minutes=intervals_passed * 30)
-
-            if st.session_state.reminders_enabled and is_awake and remaining > 0 and latest_passed:
-                if st.session_state.last_reminder_sent is None or latest_passed > st.session_state.last_reminder_sent:
-                    trigger_voice_and_push_reminder(st.session_state.user_name, one_time_ml, remaining, goal)
-                    st.session_state.last_reminder_sent = latest_passed
-
-            # Play invisible audio natively if triggered!
-            if st.session_state.voice_audio:
-                play_hidden_audio(st.session_state.voice_audio)
-                st.session_state.voice_audio = None # Clear immediately so it only plays once
 
         with st.container(border=True):
             st.subheader(":orange[Cups to ml Converter]")
