@@ -1,10 +1,10 @@
 
 # 💧 WaterBuddy: Your Daily Hydration Companion
 
-[![Live App on Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](YOUR_STREAMLIT_APP_LINK_HERE)
-![Python](https://img.shields.io/badge/Python-3.12%2B-3B82F6?style=for-the-badge&logo=python&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-Web_App-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Production_Ready-22C55E?style=for-the-badge)
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://idai102-1000679-gaurav-bardia.streamlit.app)
+[![Python](https://img.shields.io/badge/Python-3.11-3B82F6?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3110/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-Framework-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Status](https://img.shields.io/badge/Status-Production_Ready-22C55E?style=for-the-badge&logo=github&logoColor=white)](https://github.com/gaurav-bardia-160/IDAI102-1000679--Gaurav-Bardia)
 
 > **🌐 Live Web Application:** [**Click Here to Launch WaterBuddy on Streamlit Cloud **](https://ibcp-ai-fa-2-waterbuddy-6xcdcbzuh5jxrtrghaef2z.streamlit.app/)  
 
