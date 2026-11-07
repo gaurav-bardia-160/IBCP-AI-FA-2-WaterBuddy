@@ -21,7 +21,7 @@
 4. **Disruptive Nighttime Alerts:** Traditional reminder apps send notifications at fixed hours even when the user is asleep.
 
 **How WaterBuddy Solves This:**  
-WaterBuddy personalizes hydration from the very first screen—calibrating goals by age group, adapting to the user's actual cup and bottle sizes, scheduling smart reminders strictly during the user's **awake window**, and persisting all progress automatically so data is never lost on refresh.
+WaterBuddy personalizes hydration from the very first screen—calibrating goals by age group, adapting to the user's actual cup and bottle sizes, scheduling smart reminders strictly during the user's **awake window**.
 
 ---
 
@@ -71,9 +71,6 @@ Reacts live with age-aware motivational messages at exact completion milestones:
 * **1-Click Drinkware Buttons:** Log `+1 Cup` or `+1 Bottle` using the user's exact saved capacities, or log any custom `ml` amount.
 * **Live Cups ↔ ml Converter:** Converts any number of cups into milliliters based on the user's custom cup size and logs it with one click.
 * **Today's Intake Report & Daily Reset:** Displays a timestamped history of drinks logged today and includes a **Reset Day & Start Fresh** button.
-
-### 6. 💾 Automatic Data Persistence Across Browser Refreshes
-* Built-in JSON state engine (`waterbuddy_state.json`) automatically saves profile settings, logged intake, drink history, and reminder states so **refreshing the browser (`F5`) never resets user progress**.
 
 ---
 
